@@ -55,6 +55,7 @@ server.get('/getRegisto/:id',async function(req, res, next) {     //retorna os s
     return next();
 });
 
+
 server.get('/getDispositivoInfo/:mac',async function(req, res, next) {     //retorna os sensores e os seus valores lidos
   var mac = req.params.mac;
 
@@ -94,6 +95,53 @@ server.get('/getSensorValues/:mac',async function(req, res, next) {     //retorn
   return next();
 });
 
+server.get('/getSensorValue/:sensor/:mac',async function(req, res, next) {     //retorna os sensores e os seus valores lidos
+  var mac = req.params.mac;
+  var sensor = req.params.sensor;
+
+  let sensor_id =""
+
+  switch(sensor){
+    case "Temperatura":
+      sensor_id = "t_leitura";
+      break;
+    case "Humidade":
+      sensor_id = "h_leitura";
+      break
+    case "Gas":
+      sensor_id = "gas_leitura";
+      break
+    case "Dust":
+      sensor_id = "po_leitura";
+      break
+  }
+
+  var query = "select data_leitura,"+sensor_id+" from Leitura where mac="+mac+" ORDER BY data_leitura ASC";
+
+  connection.query(query, function (error, results, fields) {
+    if (error)
+    {
+      res.json({bad:error})
+    }
+    else{
+      var reads = [];
+      var resp = results
+      resp.forEach(element => { 
+        let leitura = {
+          data_leitura: element.data_leitura,
+          y_axis : element[sensor_id]
+        }
+        reads.push(leitura)
+      });
+      res.json(reads)
+    }
+   
+  });
+ 
+  return next();
+});
+
+
 server.post('/registerMac/',async function(req, res, next) {     //associa mac a um id do utilizaodr
   var mac = req.body.mac;
   var id = req.body.id;
@@ -119,7 +167,7 @@ server.post('/addSensorValue/',async function(req, res, next) {     //adiciona u
   var value = req.body.value;
   var mac = req.body.mac;
 
-  console.log(value)
+  
   const po_leitura = value.po_leitura;
   const h_leitura =value.h_leitura;
   const t_leitura =value.t_leitura;
